@@ -43,10 +43,17 @@ public class SynacorChallenge {
     public static void readBinary(String fileName) throws IOException {
         InputStream inputStream = new FileInputStream(fileName);
         DataInputStream dataInputStream = new DataInputStream(inputStream);
-        int c;
         
         int available = inputStream.available();
-        System.out.println(available);
+        System.out.println(available + " bytes to read");
+        
+        int count = 0;
+        
+        while(count < available){
+            System.out.println(dataInputStream.readUnsignedByte());
+            //System.out.println(dataInputStream.readByte());
+            count++;
+        }
     }
     
     public static void main(String[] args) throws IOException {
