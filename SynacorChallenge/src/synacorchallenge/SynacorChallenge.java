@@ -85,32 +85,59 @@ public class SynacorChallenge {
         System.out.println(sizeDirs);
         
         for(int i = 0; i < sizeDirs; i++){
+            //System.out.println("index: " + i);
             //System.out.println("hmmm");
             
             short shortVal = twoBytesToShort(directions[0][i], directions[1][i]);//since it is little-endian, bytes are reversed
             int intVal = shortVal >= 0 ? shortVal : 0x10000 + shortVal;//convert to unsigned int
             
             switch(intVal){
-                case 0:
+                case 0://end program
                     System.exit(0);
-                case 6://not sure if working
-                    short nextShortVal1 = twoBytesToShort(directions[0][i+1], directions[1][i+1]);
-                    int nextIntVal1 = nextShortVal1 >= 0 ? nextShortVal1 : 0x10000 + nextShortVal1;//convert to unsigned int
-                    System.out.println(nextIntVal1);
+                case 6://jump
+                    int nextIntVal1 = getValue(directions[0][i+1], directions[1][i+1]);
+                    //System.out.println("jump to: " + nextIntVal1);
                     i = nextIntVal1-1;
                     break;
-                case 19:
-                    short nextShortVal2 = twoBytesToShort(directions[0][i+1], directions[1][i+1]);
-                    //System.out.println(nextShortVal);
-                    int nextIntVal2 = nextShortVal2 >= 0 ? nextShortVal2 : 0x10000 + nextShortVal2;//convert to unsigned int
+                case 7://jump if a != 0
+                    int nextVal3 = getValue(directions[0][i+1], directions[1][i+1]);
+                    if(nextVal3 != 0){
+                        int nextVal4 = getValue(directions[0][i+2], directions[1][i+2]);
+                        //System.out.println(nextVal4);
+                        i = nextVal4-1;
+                    }
+                    i += 2;
+                    break;
+                case 8://jump if a = 0
+                    int nextVal5 = getValue(directions[0][i+1], directions[1][i+1]);
+                    if(nextVal5 == 0){
+                        int nextVal4 = getValue(directions[0][i+2], directions[1][i+2]);
+                        //System.out.println(nextVal4);
+                        i = nextVal4-1;
+                    }
+                    i += 2;
+                    break;
+                case 19://print to screen
+                    int nextIntVal2 = getValue(directions[0][i+1], directions[1][i+1]);
                     System.out.print(new Character((char)nextIntVal2).toString());
                     i++;
                     break;
-                case 21:
+                case 21://do nothing
                     break;
+                default:
+                    System.out.println("instruction: " + intVal);
+                    System.exit(0);
             }
         }
 
+    }
+    
+    public static int getValue(byte b1, byte b2){
+        
+        short shortVal = twoBytesToShort(b1, b2);
+        int intVal = shortVal >= 0 ? shortVal : 0x10000 + shortVal;
+        
+        return intVal;
     }
     
     public static short twoBytesToShort(byte b1, byte b2) {
