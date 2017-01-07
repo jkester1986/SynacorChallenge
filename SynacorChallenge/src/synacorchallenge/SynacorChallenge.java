@@ -93,12 +93,17 @@ public class SynacorChallenge {
             switch(intVal){
                 case 0:
                     System.exit(0);
+                case 6://not sure if working
+                    short nextShortVal1 = twoBytesToShort(directions[0][i+1], directions[1][i+1]);
+                    int nextIntVal1 = nextShortVal1 >= 0 ? nextShortVal1 : 0x10000 + nextShortVal1;//convert to unsigned int
+                    System.out.println(nextIntVal1);
+                    i = nextIntVal1-1;
+                    break;
                 case 19:
-                    short nextShortVal = twoBytesToShort(directions[0][i+1], directions[1][i+1]);
+                    short nextShortVal2 = twoBytesToShort(directions[0][i+1], directions[1][i+1]);
                     //System.out.println(nextShortVal);
-                    int nextIntVal = nextShortVal >= 0 ? nextShortVal : 0x10000 + nextShortVal;//convert to unsigned int
-                    System.out.print(new Character((char)nextIntVal).toString());
-                    //System.out.println(directions[i+1]);
+                    int nextIntVal2 = nextShortVal2 >= 0 ? nextShortVal2 : 0x10000 + nextShortVal2;//convert to unsigned int
+                    System.out.print(new Character((char)nextIntVal2).toString());
                     i++;
                     break;
                 case 21:
