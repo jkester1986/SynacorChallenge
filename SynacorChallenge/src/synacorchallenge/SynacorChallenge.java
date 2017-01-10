@@ -55,6 +55,7 @@ public class SynacorChallenge {
         int count = 0;
         int index = 0;
         
+        //directions are stored as little endian pairs, kept the bytes separate
         byte[][] directions = new byte[2][available/2];
         
          
@@ -85,8 +86,6 @@ public class SynacorChallenge {
         System.out.println(sizeDirs);
         
         for(int i = 0; i < sizeDirs; i++){
-            //System.out.println("index: " + i);
-            //System.out.println("hmmm");
             
             short shortVal = twoBytesToShort(directions[0][i], directions[1][i]);//since it is little-endian, bytes are reversed
             int intVal = shortVal >= 0 ? shortVal : 0x10000 + shortVal;//convert to unsigned int
@@ -94,28 +93,39 @@ public class SynacorChallenge {
             switch(intVal){
                 case 0://end program
                     System.exit(0);
+                case 1://set register a to val of b
+                    int nextVal6 = getValue(directions[0][i+1], directions[1][i+1]);
+                    System.out.println("nextVal6: " + nextVal6);
+                    break;
                 case 6://jump
                     int nextIntVal1 = getValue(directions[0][i+1], directions[1][i+1]);
                     //System.out.println("jump to: " + nextIntVal1);
                     i = nextIntVal1-1;
                     break;
-                case 7://jump if a != 0
+                case 7://jump to be if a != 0
                     int nextVal3 = getValue(directions[0][i+1], directions[1][i+1]);
                     if(nextVal3 != 0){
                         int nextVal4 = getValue(directions[0][i+2], directions[1][i+2]);
                         //System.out.println(nextVal4);
                         i = nextVal4-1;
                     }
-                    i += 2;
+                    else {
+                        //System.out.println("nextVal: " + nextVal3);
+                        i += 2;
+                    }
                     break;
-                case 8://jump if a = 0
+                    
+                case 8://jump to b if a == 0
                     int nextVal5 = getValue(directions[0][i+1], directions[1][i+1]);
                     if(nextVal5 == 0){
                         int nextVal4 = getValue(directions[0][i+2], directions[1][i+2]);
                         //System.out.println(nextVal4);
                         i = nextVal4-1;
                     }
-                    i += 2;
+                    else {
+                        //System.out.println("nextVal: " + nextVal5);
+                        //i += 2;//should this be incrementing just like in 7?
+                    }
                     break;
                 case 19://print to screen
                     int nextIntVal2 = getValue(directions[0][i+1], directions[1][i+1]);
