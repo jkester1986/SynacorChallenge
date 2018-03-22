@@ -84,19 +84,19 @@ public class SynacorChallenge {
             
             switch(directions[i]){
                 case 0://end program
-                    System.out.println("case 0");
+                    System.out.println("instruction 0 - exit");
                     System.exit(0);
                     
                 case 6://jump to value in a
-                    System.out.println("case 6");
+                    System.out.println("instruction 6 - jump to location of value in a");
                     System.out.println(directions[i+1]);
                     a = getStoredValue(directions[i+1], directions);
                     System.out.println("jump to: " + a);
-                    i = a;
+                    i = a-1;
                     break;
-                    
+              
                 case 7://jump to b if a != 0
-                    System.out.println("case 7");
+                    System.out.println("instruction 7 - jump to b if a != 0");
                     a = getStoredValue(directions[i+1], directions);
                     b = getStoredValue(directions[i+2], directions);
                     System.out.println("a: " + a);
@@ -110,7 +110,7 @@ public class SynacorChallenge {
                     break;
                     
                 case 8://jump to b if a == 0
-                    System.out.println("case 8");
+                    System.out.println("instruction 8 - jump to b if a == 0");
                     a = getStoredValue(directions[i+1], directions);
                     b = getStoredValue(directions[i+2], directions);
                     System.out.println("a: " + a);
@@ -122,11 +122,11 @@ public class SynacorChallenge {
                         i += 2;//should this be incrementing just like in 7?
                     }
                     break;
-                    
+                  
                 case 19://print to a screen
                     //System.out.println("case 19");
                     a = directions[i+1];
-                    System.out.print(new Character((char)a).toString());
+                    System.out.print((char)a);
                     i++;
                     break;
                     
