@@ -47,7 +47,7 @@ public class SynacorChallenge {
         DataInputStream dataInputStream = new DataInputStream(inputStream);
         
         int available = inputStream.available();
-        System.out.println(available + " bytes to read");
+        //System.out.println(available + " bytes to read");
         
         byte byte1;
         byte byte2;
@@ -56,93 +56,94 @@ public class SynacorChallenge {
         int index = 0;
         
         //directions are stored as little endian pairs, kept the bytes separate
-        byte[][] directions = new byte[2][available/2];
+        int[] directions = new int[available/2];
+        
+        int[] register = new int[8];
         
          
-        
         while(count < available){
             
             byte1 = dataInputStream.readByte();
             byte2 = dataInputStream.readByte();
             
-            String s1 = String.format("%8s", Integer.toBinaryString(byte1 & 0xFF)).replace(' ', '0');
-            String s2 = String.format("%8s", Integer.toBinaryString(byte2 & 0xFF)).replace(' ', '0');
+            directions[index] = getIntValue(byte2, byte1);
+            //System.out.println(directions[index]);
             
-            
-            short shortVal = twoBytesToShort(byte2, byte1);//since it is little-endian, bytes are reversed
-            int intVal = shortVal >= 0 ? shortVal : 0x10000 + shortVal;//convert to unsigned int
-            //System.out.println(intVal);
-            //System.out.println(s2 + s1);
-            
-            //System.out.println(new Character((char)intVal).toString());
-            
-            directions[0][index] = byte2;
-            directions[1][index] = byte1;
             index++;
             count+=2;
         }
         
-        int sizeDirs = directions.length*directions[0].length/2;
-        System.out.println(sizeDirs);
+        int sizeDirs = directions.length;
         
         for(int i = 0; i < sizeDirs; i++){
             
-            short shortVal = twoBytesToShort(directions[0][i], directions[1][i]);//since it is little-endian, bytes are reversed
-            int intVal = shortVal >= 0 ? shortVal : 0x10000 + shortVal;//convert to unsigned int
+            int a;
+            int b;
+            int c;
             
-            switch(intVal){
+            
+            switch(directions[i]){
                 case 0://end program
+                    System.out.println("case 0");
                     System.exit(0);
-                case 1://set register a to val of b
-                    int nextVal6 = getValue(directions[0][i+1], directions[1][i+1]);
-                    System.out.println("nextVal6: " + nextVal6);
+                    
+                case 6://jump to value in a
+                    System.out.println("case 6");
+                    System.out.println(directions[i+1]);
+                    a = getStoredValue(directions[i+1], directions);
+                    System.out.println("jump to: " + a);
+                    i = a;
                     break;
-                case 6://jump
-                    int nextIntVal1 = getValue(directions[0][i+1], directions[1][i+1]);
-                    //System.out.println("jump to: " + nextIntVal1);
-                    i = nextIntVal1-1;
-                    break;
-                case 7://jump to be if a != 0
-                    int nextVal3 = getValue(directions[0][i+1], directions[1][i+1]);
-                    if(nextVal3 != 0){
-                        int nextVal4 = getValue(directions[0][i+2], directions[1][i+2]);
-                        //System.out.println(nextVal4);
-                        i = nextVal4-1;
+                    
+                case 7://jump to b if a != 0
+                    System.out.println("case 7");
+                    a = getStoredValue(directions[i+1], directions);
+                    b = getStoredValue(directions[i+2], directions);
+                    System.out.println("a: " + a);
+                    System.out.println("b: " + b);
+                    if(a != 0){
+                        i = b-1;
                     }
                     else {
-                        //System.out.println("nextVal: " + nextVal3);
                         i += 2;
                     }
                     break;
                     
                 case 8://jump to b if a == 0
-                    int nextVal5 = getValue(directions[0][i+1], directions[1][i+1]);
-                    if(nextVal5 == 0){
-                        int nextVal4 = getValue(directions[0][i+2], directions[1][i+2]);
-                        //System.out.println(nextVal4);
-                        i = nextVal4-1;
+                    System.out.println("case 8");
+                    a = getStoredValue(directions[i+1], directions);
+                    b = getStoredValue(directions[i+2], directions);
+                    System.out.println("a: " + a);
+                    System.out.println("b: " + b);
+                    if(a == 0){
+                        i = b-1;
                     }
                     else {
-                        //System.out.println("nextVal: " + nextVal5);
-                        //i += 2;//should this be incrementing just like in 7?
+                        i += 2;//should this be incrementing just like in 7?
                     }
                     break;
-                case 19://print to screen
-                    int nextIntVal2 = getValue(directions[0][i+1], directions[1][i+1]);
-                    System.out.print(new Character((char)nextIntVal2).toString());
+                    
+                case 19://print to a screen
+                    //System.out.println("case 19");
+                    a = directions[i+1];
+                    System.out.print(new Character((char)a).toString());
                     i++;
                     break;
+                    
                 case 21://do nothing
+                    //System.out.println("case 21");
                     break;
+                    
                 default:
-                    System.out.println("instruction: " + intVal);
-                    System.exit(0);
+                    System.out.println("failing to continue at instruction: " + directions[i]);
+                    //System.exit(0);
+                    break;
             }
         }
 
     }
     
-    public static int getValue(byte b1, byte b2){
+    public static int getIntValue(byte b1, byte b2){
         
         short shortVal = twoBytesToShort(b1, b2);
         int intVal = shortVal >= 0 ? shortVal : 0x10000 + shortVal;
@@ -154,7 +155,20 @@ public class SynacorChallenge {
           return (short) ((b1 << 8) | (b2 & 0xFF));
     }
     
-    
+    /*
+    * numbers 0..32767 mean a literal value
+    * numbers 32768..32775 instead mean registers 0..7
+    * numbers 32776..65535 are invalid
+    */
+    public static int getStoredValue(int direction, int[] directions) {
+        if(direction > -1 && direction < 32767) {
+            return direction;
+        }
+        else if(direction > 32767 && direction < 32776) {
+            return directions[direction%32768];
+        }
+        else return -1;
+    }
     
     
     public static void main(String[] args) throws IOException {
