@@ -8,6 +8,7 @@ package synacorchallenge;
 import java.io.*;
 import static java.lang.System.in;
 import java.util.StringTokenizer;
+import java.util.Stack;
 
 
 
@@ -22,6 +23,10 @@ public class SynacorChallenge {
      * @param fileName
      * @throws java.io.IOException
      */
+    
+    public static int[] registers = new int[8];
+    public static int[] directions = new int[1 << 15];
+    public static Stack stack = new Stack<Integer>();
     
     //Just reads the text from the file
     public static void readText(String fileName) throws IOException{
@@ -56,10 +61,7 @@ public class SynacorChallenge {
         int index = 0;
         
         //directions are stored as little endian pairs, kept the bytes separate
-        int[] directions = new int[available/2];
-        
-        int[] register = new int[8];
-        
+             
          
         while(count < available){
             
@@ -84,23 +86,64 @@ public class SynacorChallenge {
             
             switch(directions[i]){
                 case 0://end program
-                    System.out.println("instruction 0 - exit");
+                    //System.out.println("instruction 0 - exit");
                     System.exit(0);
                     
+                case 1://set reg a to value of b
+                    //System.out.println("instruction 1 - set reg a to value of b");
+                    //System.out.println("directions i+1 = " + directions[i+1]);
+                    //System.out.println("directions i+2 = " + directions[i+2]);
+                    a = getRegister(directions[i+1]);
+                    b = getStoredValue(directions[i+2]);
+                    //System.out.println("a: " + a);
+                    //System.out.println("b: " + b);
+                    registers[a] = b;
+                    i += 2;
+                    break;
+                    
+                case 2://push <a> onto the stack
+                    stack.addElement(getStoredValue(directions[i+1]));
+                    i++;
+                    break;
+                    
+                case 3://remove the top element from the stack and write it into <a>; empty stack = error
+                    int popped = (int)stack.pop();
+                    a = getRegister(directions[i+1]);
+                    registers[a] = popped;
+                    i++;
+                    break;
+                    
+                case 4://set <a> to 1 if <b> is equal to <c>; set it to 0 otherwise
+                    a = getRegister(directions[i+1]);
+                    b = getStoredValue(directions[i+2]);
+                    c = getStoredValue(directions[i+3]);
+                    registers[a] = b == c ? 1 : 0;
+                    
+                    i += 3;
+                    break;
+                    
+                case 5://set <a> to 1 if <b> is greater than <c>; set it to 0 otherwise
+                    a = getRegister(directions[i+1]);
+                    b = getStoredValue(directions[i+2]);
+                    c = getStoredValue(directions[i+3]);
+                    registers[a] = b > c ? 1 : 0;
+                    i += 3;
+                    break;
+                    
                 case 6://jump to value in a
-                    System.out.println("instruction 6 - jump to location of value in a");
-                    System.out.println(directions[i+1]);
-                    a = getStoredValue(directions[i+1], directions);
-                    System.out.println("jump to: " + a);
+                    //System.out.println("instruction 6 - jump to location of value in a");
+                    //System.out.println(directions[i+1]);
+                    a = getStoredValue(directions[i+1]);
+                    //System.out.println("jump to: " + a);
                     i = a-1;
                     break;
-              
+         
                 case 7://jump to b if a != 0
-                    System.out.println("instruction 7 - jump to b if a != 0");
-                    a = getStoredValue(directions[i+1], directions);
-                    b = getStoredValue(directions[i+2], directions);
-                    System.out.println("a: " + a);
-                    System.out.println("b: " + b);
+                    //System.out.println("instruction 7 - jump to b if a != 0");
+                    a = getStoredValue(directions[i+1]);
+                    b = getStoredValue(directions[i+2]);
+                    //System.out.println("a: " + a);
+                    //System.out.println("b: " + b);
                     if(a != 0){
                         i = b-1;
                     }
@@ -110,11 +153,11 @@ public class SynacorChallenge {
                     break;
                     
                 case 8://jump to b if a == 0
-                    System.out.println("instruction 8 - jump to b if a == 0");
-                    a = getStoredValue(directions[i+1], directions);
-                    b = getStoredValue(directions[i+2], directions);
-                    System.out.println("a: " + a);
-                    System.out.println("b: " + b);
+                    //System.out.println("instruction 8 - jump to b if a == 0");
+                    a = getStoredValue(directions[i+1]);
+                    b = getStoredValue(directions[i+2]);
+                    //System.out.println("a: " + a);
+                    //System.out.println("b: " + b);
                     if(a == 0){
                         i = b-1;
                     }
@@ -122,11 +165,97 @@ public class SynacorChallenge {
                         i += 2;//should this be incrementing just like in 7?
                     }
                     break;
-                  
+                    
+                case 9://assign into <a> the sum of <b> and <c> (modulo 32768)
+                    a = getRegister(directions[i+1]);
+                    b = getStoredValue(directions[i+2]);
+                    c = getStoredValue(directions[i+3]);
+                    registers[a] = (b + c)%32768;
+                    i += 3;
+                    break;
+                    
+                case 10://store into <a> the product of <b> and <c> (modulo 32768
+                    a = getRegister(directions[i+1]);
+                    b = getStoredValue(directions[i+2]);
+                    c = getStoredValue(directions[i+3]);
+                    registers[a] = (b*c)%32768;
+                    i += 3;
+                    break;
+                    
+                case 11://store into <a> the remainder of <b> divided by <c>
+                    a = getRegister(directions[i+1]);
+                    b = getStoredValue(directions[i+2]);
+                    c = getStoredValue(directions[i+3]);
+                    registers[a] = (b%c);
+                    i += 3;
+                    break;
+                    
+                case 12://stores into <a> the bitwise and of <b> and <c>
+                    a = getRegister(directions[i+1]);
+                    b = getStoredValue(directions[i+2]);
+                    c = getStoredValue(directions[i+3]);
+                    registers[a] = b & c;
+                    i += 3;
+                    break;
+                    
+                case 13://stores into <a> the bitwise or of <b> and <c>
+                    a = getRegister(directions[i+1]);
+                    b = getStoredValue(directions[i+2]);
+                    c = getStoredValue(directions[i+3]);
+                    registers[a] = b | c;
+                    i += 3;
+                    break;
+                    
+                case 14://stores 15-bit bitwise inverse of <b> in <a>
+                    a = getRegister(directions[i+1]);
+                    b = getStoredValue(directions[i+2]);
+                    registers[a] = (~b) & 32767;
+                    i += 2;
+                    break;
+                    
+                case 15://read memory at address <b> and write it to <a>
+                    a = getRegister(directions[i+1]);
+                    b = getStoredValue(directions[i+2]);
+                    //int mem = getStoredValue(directions[b]);//this might be the correct one
+                    int mem = directions[b];
+                    registers[a] = mem;
+                    i += 2;
+                    break;
+                    
+                case 16://write the value from <b> into memory at address <a>
+                    a = getStoredValue(directions[i+1]);
+                    b = getStoredValue(directions[i+2]);
+                    directions[a] = b;
+                    i += 2;    
+                    break;
+                    
+                case 17://write the address of the next instruction to the stack and jump to <a>
+                    stack.addElement(i+2);
+                    a = getStoredValue(directions[i+1]);
+                    i = a-1;
+                    break;
+                    
+                case 18://remove the top element from the stack and jump to it; empty stack = halt
+                    int el = (int)stack.pop();
+                    i = el - 1;
+                    break;
+              
                 case 19://print to a screen
                     //System.out.println("case 19");
-                    a = directions[i+1];
+                    a = getStoredValue(directions[i+1]);
                     System.out.print((char)a);
+                    i++;
+                    break;
+                    
+                case 20:/*read a character from the terminal and write its ascii code
+                    to <a>; it can be assumed that once input starts,
+                    it will continue until a newline is encountered;
+                    this means that you can safely read whole lines
+                    from the keyboard and trust that they will be fully read
+                    */
+                    a = getRegister(directions[i+1]);
+                    int inChar = System.in.read();
+                    registers[a] = inChar;
                     i++;
                     break;
                     
@@ -136,7 +265,7 @@ public class SynacorChallenge {
                     
                 default:
                     System.out.println("failing to continue at instruction: " + directions[i]);
-                    //System.exit(0);
+                    System.exit(0);
                     break;
             }
         }
@@ -160,12 +289,23 @@ public class SynacorChallenge {
     * numbers 32768..32775 instead mean registers 0..7
     * numbers 32776..65535 are invalid
     */
-    public static int getStoredValue(int direction, int[] directions) {
-        if(direction > -1 && direction < 32767) {
+    public static int getStoredValue(int direction) {
+        if(direction > -1 && direction < 32768) {
             return direction;
         }
         else if(direction > 32767 && direction < 32776) {
-            return directions[direction%32768];
+            return registers[direction%32768];
+        }
+        else {
+            System.out.println("something went wrong, youf value is too high");
+            System.exit(0);
+            return 0;
+        }
+    }
+    
+    public static int getRegister(int reg) {
+        if(reg > 32767 && reg < 32776) {
+            return reg%32768;
         }
         else return -1;
     }
