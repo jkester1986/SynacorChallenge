@@ -7,6 +7,7 @@ package synacorchallenge;
 
 import java.io.*;
 import static java.lang.System.in;
+import java.util.Arrays;
 import java.util.StringTokenizer;
 import java.util.Stack;
 
@@ -223,6 +224,7 @@ public class SynacorChallenge {
                     break;
                     
                 case 16://write the value from <b> into memory at address <a>
+                    
                     a = getStoredValue(directions[i+1]);
                     b = getStoredValue(directions[i+2]);
                     directions[a] = b;
